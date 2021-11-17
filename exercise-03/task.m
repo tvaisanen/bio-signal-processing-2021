@@ -267,17 +267,19 @@ for m = 1:numel(m_list)
     for n = 1:numel(c_list)
         L = m_list(m);
         C = c_list(n);
-        
 
-        [y,e,w] = doLMSFiltering(L,C,chestECG,abdomenECG);
-        error = evaluateResult(y)
+        step = 2*C/sum(power(c_list,2));
         
+        [y, e,w] = doLMSFiltering(L,step,chestECG,abdomenECG);
+        error = evaluateResult(y)
+
         if error < best_mse
             best_mse = error;
             best_m = L;
             best_c = C;
             best_w = w;
         end
+
     end
 end
 
