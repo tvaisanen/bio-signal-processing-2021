@@ -273,16 +273,17 @@ for m = 1:numel(m_list)
         L = m_list(m);
         C = c_list(n);
 
-        step = 2*C/(sum(power(c_list,2))*numel(c_list))
-        
+        M = numel(chestECG);
+        step = (mu_max*2*C)/M;
         
         if step < mu_max
         
         
             [y, e,w] = doLMSFiltering(L,step,chestECG,abdomenECG);
-            error = evaluateResult(y)
+            
+            error = evaluateResult(y);
 
-            if error < best_mse
+            if error < best_mse;
                 best_mse = error;
                 best_m = L;
                 best_c = C;
@@ -330,7 +331,7 @@ end
 
     % You can call the 'immse' function for the signals without the initial rejection parts
     % << INSERT YOUR CODE HERE >>
-    mse = immse(fetalECG(INITIAL_REJECTION+1:end), y(INITIAL_REJECTION+1:end))
+    mse = immse(fetalECG(INITIAL_REJECTION+1:end), y(INITIAL_REJECTION+1:end));
     end
 end
 
