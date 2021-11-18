@@ -1,0 +1,57 @@
+% Load problem3.mat to have access to variables abd_sig1 and mhb_ahead
+
+
+% The sampling rates are 1000 Hz
+FS = 1000;
+
+
+load('problem3.mat')
+
+% Calculate sample timing vector in seconds starting from 0
+t = (0:1/FS:20-1/FS);
+t2 = (0:1/(FS*2):20-1/(2*FS));
+% Estimate the time lag using cross correlation with the 'xcorr' function
+% Fit a spline to the cross correlation using 'spline' function, and then 
+% find the delay with maximum correlation using 'fnmin'
+% NOTE: to use minimization function for maximization, please invert the objective function!
+[r, lags] = xcorr(abd_sig1,mhb_ahead);
+pp = spline(lags, -r);
+[a,d] = fnmin(pp,[-100,100])
+d = -d;
+% % Shift the chest ECG mhb_ahead back in time d samples
+% % Use linear interpolation with extrapolation with the function 'interp1'
+clf
+t2 = t+1.5*(1/FS);
+
+mhb = interp1(t,mhb_ahead,t2, 'linear','extrap')';
+
+i = 1
+mhb = [ones(i,1)*mhb(1); mhb(i:end-1);];
+
+%c2 = dot(abd_sig1,mhb)/dot(mhb,mhb)
+
+c2 = dot(abd_sig1,mhb)/dot(mhb,mhb)
+
+% N = 10
+% p = ones(2,N)
+% 
+% [ones(i,1)*mhb(1); mhb(i:end-i);]
+% for i = 1:N
+%     FOO = i;
+%     %mhb = [mhb(FOO:end);ones(FOO-1,1)*mhb(end)];
+%     mhb = [ones(i,1)*mhb(1); mhb(i:end-i);];
+%     size(mhb);
+%     c2 = dot(abd_sig1,mhb)/dot(mhb,mhb)
+%     p(1,i) = c2;
+%     p(2,i) = i;
+% end
+% N = 500;
+
+%plot(p(2,:),p(1,:))
+
+% plot(1:N, mhb(1:N))
+% hold on
+% plot(1:N, mhb_ahead(1:N))
+
+% Calculate the fetal ECG by cancelling out the scaled mother's ECG using projection based estimation coefficient
+%fetus = abd_sig1 - c2 * mhb;
