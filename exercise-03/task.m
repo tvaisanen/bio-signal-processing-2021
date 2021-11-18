@@ -154,21 +154,28 @@ t2 = (0:1/(FS*2):20-1/(2*FS));
 pp = spline(lags,-r);
 [a,d] = fnmin(pp,[-5,1]);
 d = -d;
+
 % fnplt(pp,[-5,1])
 % Shift the chest ECG mhb_ahead back in time d samples
 % Use linear interpolation with extrapolation with the function 'interp1'
 integer_offset = floor(d);
 partial_offset = d - integer_offset; % get rid of the integer
 
-mhb = [mhb_ahead(1)*ones(integer_offset,1);
-       mhb_ahead(1:end-integer_offset)];
+mhb = [mhb_ahead(1)*ones(integer_offset+1,1);
+       mhb_ahead(1:end-integer_offset-1)];
 
-t2 = t + partial_offset*0.0001;
+% create new x coordinate where each x is offset 
+% by partial offset obtained via xcorr 
+t2 = t + partial_offset*(1/FS);
+
+mhb_debug = interp1(t, mhb, t2, 'linear', 'extrap')';
 mhb = interp1(t, mhb, t2, 'linear', 'extrap')';
-clf
-N = 200;
+% c2 = 1.0177
 
+c2 = dot(abd_sig1,mhb)/dot(mhb,mhb)
+clf
 subplot(211)
+
 plot(t(1:N),abd_sig1(1:N))
 hold on
 %plot(t(1:N),circshift(mhb_ahead(1:N),3))
@@ -188,8 +195,6 @@ plot(t(end-N:end),mhb(end-N:end))
 legend('interpolated','mhb')
 
 
-% Estimate c2 from abd_sig1 and mhb
-c2 = dot(abd_sig1,mhb)/dot(mhb,mhb);
 
 % Calculate the fetal ECG by cancelling out the scaled mother's ECG using projection based estimation coefficient
 fetus = abd_sig1 - c2 * mhb;
@@ -268,16 +273,21 @@ for m = 1:numel(m_list)
         L = m_list(m);
         C = c_list(n);
 
-        step = 2*C/sum(power(c_list,2));
+        step = 2*C/(sum(power(c_list,2))*numel(c_list))
         
-        [y, e,w] = doLMSFiltering(L,step,chestECG,abdomenECG);
-        error = evaluateResult(y)
+        
+        if step < mu_max
+        
+        
+            [y, e,w] = doLMSFiltering(L,step,chestECG,abdomenECG);
+            error = evaluateResult(y)
 
-        if error < best_mse
-            best_mse = error;
-            best_m = L;
-            best_c = C;
-            best_w = w;
+            if error < best_mse
+                best_mse = error;
+                best_m = L;
+                best_c = C;
+                best_w = w;
+            end
         end
 
     end
